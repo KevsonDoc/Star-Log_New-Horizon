@@ -1,20 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Log: New Horizons</title>
+    <meta name="theme-color" content="#10120f">
+    <title>Star Log: Preparar missão</title>
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="min-h-screen bg-neutral-900 text-white">
+<body class="space-page">
     <!-- navigation -->
-    <main class="mx-auto mt-3 w-full max-w-[800px]">
-        <h1 class="sr-only">Star Log: New Horizons</h1>
-        <div id="game-container" class="aspect-[800/550] w-full" aria-label="Game area"></div>
+    <main class="game-main" id="main">
+        <h1 class="sr-only">Star Log: New Horizons — missão</h1>
+        <div class="game-heading"><p class="eyebrow">REGISTRO DE VOO / 001</p><a href="/">← Voltar à base</a></div>
+        <div class="flight-toolbar"><span id="flight-state">PRÉ-VOO</span><div><button id="pause-mission" type="button" disabled>Pausar</button><button id="restart-mission" type="button" disabled>Reiniciar</button></div></div>
+        <div class="game-frame">
+            <div id="game-container" tabindex="-1" aria-label="Área do jogo. W A S D para mover e espaço ou clique para disparar."></div>
+            <section id="mission-gate" class="mission-gate" aria-labelledby="mission-title">
+                <div class="briefing-header"><span class="eyebrow">PREPARAÇÃO DA MISSÃO</span><span aria-hidden="true">[ 01 ]</span></div>
+                <h2 id="mission-title">Seu próximo<br><em>horizonte.</em></h2>
+                <p class="briefing-copy">Desvie das bombas e destrua o asteroide.</p>
+                <div class="controls-guide">
+                    <div><span class="control-number">01 / NAVEGAR</span><div class="key-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><span>Mover a nave</span></div>
+                    <div><span class="control-number">02 / ATACAR</span><div class="key-row"><kbd>ESPAÇO</kbd></div><span>Disparar laser · ou clique</span></div>
+                </div>
+                <div class="launch-row"><button id="launch-mission" class="primary-action" type="button">Iniciar missão <span aria-hidden="true">↗</span></button><span class="launch-note">TECLADO + MOUSE<br>Contagem de 3s antes de começar</span></div>
+                <progress id="load-progress" max="1" value="0" aria-label="Carregamento da missão" hidden></progress>
+                <p id="launch-status" class="action-note" role="status" aria-live="polite">Aguardando seu comando.</p>
+            </section>
+        </div>
+        <p class="game-hint">W A S D · Mover <span>ESPAÇO / CLIQUE · Disparar</span> Use “Pausar” para fazer uma pausa.</p>
+        <noscript><p>Ative o JavaScript para iniciar a missão.</p></noscript>
     </main>
-    <script type="importmap">
-        { "imports": { "phaser": "/vendor/phaser.esm.min.js" } }
-    </script>
+    <script type="importmap">{ "imports": { "phaser": "/vendor/phaser.esm.min.js" } }</script>
     <script type="module" src="/game/index.js"></script>
 </body>
 </html>

@@ -13,10 +13,18 @@ export class GameScene extends Phaser.Scene {
     private controls!: KeyboardControls;
     private projectiles!: ProjectileSystem;
     private firing = false;
+    private ready = false;
+    private loadFailed = false;
 
     constructor() { super('game'); }
 
     preload(): void {
+        this.loadFailed = false;
+        this.load.on('progress', (value: number) => this.game.events.emit('mission-progress', value));
+        this.load.once('loaderror', () => {
+            this.loadFailed = true;
+            this.game.events.emit('mission-load-error');
+        });
         for (const image of IMAGES) this.load.image(image.key, image.url);
         for (const sheet of SPRITE_SHEETS) {
             this.load.spritesheet(sheet.key, sheet.url, { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight });
@@ -24,8 +32,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     create(): void {
+        if (this.loadFailed) return;
         this.match = new Match();
         this.firing = false;
+        this.ready = false;
         this.add.image(400, 300, TEXTURES.background);
         this.createPlayer();
         this.createAsteroid();
@@ -39,11 +49,19 @@ export class GameScene extends Phaser.Scene {
         this.input.on('pointerdown', this.fireLaser, this);
         this.input.on('pointerup', this.releaseTrigger, this);
         this.input.on('pointerupoutside', this.releaseTrigger, this);
+        this.input.keyboard?.on('keydown-SPACE', this.fireLaser, this);
+        this.input.keyboard?.on('keyup-SPACE', this.releaseTrigger, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
+        this.physics.pause();
+        this.game.events.once('mission-start', () => {
+            this.ready = true;
+            this.physics.resume();
+        });
+        this.game.events.emit('mission-ready');
     }
 
     update(): void {
-        if (!this.match.isRunning) return;
+        if (!this.ready || !this.match.isRunning) return;
         const velocity = this.controls.getVelocity(GAME_SETTINGS.playerSpeed);
         this.player.setVelocity(velocity.x, velocity.y);
         this.projectiles.update();
@@ -87,7 +105,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     private fireLaser(): void {
-        if (this.firing || !this.match.isRunning) return;
+        if (!this.ready || this.firing || !this.match.isRunning) return;
         this.firing = true;
         this.projectiles.fire(this.player.x, this.player.y);
     }
@@ -114,12 +132,15 @@ export class GameScene extends Phaser.Scene {
     private finishMatch(message: string, color: string): void {
         this.add.text(150, 250, message, { fontSize: '90px', color });
         this.physics.pause();
+        this.game.events.emit('mission-ended', this.match.status === 'won');
     }
 
     private shutdown(): void {
         this.input.off('pointerdown', this.fireLaser, this);
         this.input.off('pointerup', this.releaseTrigger, this);
         this.input.off('pointerupoutside', this.releaseTrigger, this);
+        this.input.keyboard?.off('keydown-SPACE', this.fireLaser, this);
+        this.input.keyboard?.off('keyup-SPACE', this.releaseTrigger, this);
         this.projectiles.destroy();
     }
 }

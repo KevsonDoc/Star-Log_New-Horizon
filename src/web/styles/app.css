@@ -6,14 +6,129 @@
     src: url("/assets/fonts/Games-Italic.ttf") format("truetype");
     font-display: swap;
 }
-
 @font-face {
-    font-family: "Star Log Pixel";
-    src: url("/assets/fonts/pdark.ttf") format("truetype");
+    font-family: "Flight Mono";
+    src: url("/assets/fonts/prstart.ttf") format("truetype");
     font-display: swap;
 }
-
 @theme {
     --font-display: "Star Log Display", sans-serif;
-    --font-pixel: "Star Log Pixel", sans-serif;
+    --font-pixel: "Flight Mono", monospace;
 }
+:root {
+    --ink: #10120f;
+    --surface: #151a18;
+    --surface-solid: #101714;
+    --text: #f4f0df;
+    --muted: #bcc3b6;
+    --accent: #ffc66b;
+    --line: #c5d1bb38;
+    --key: #29332b;
+    --veil: #07110b55;
+    --veil-deep: #09110ee8;
+    --focus: #ffe5b9;
+    --space-1: 8px;
+    --space-2: 16px;
+    --space-3: 24px;
+    --space-4: 32px;
+    --space-6: 48px;
+    --space-8: 64px;
+}
+* { box-sizing: border-box; }
+.space-page {
+    margin: 0;
+    min-height: 100svh;
+    color: var(--text);
+    font-family: "Flight Mono", monospace;
+    font-size: 10px;
+    line-height: 1.8;
+    background: linear-gradient(90deg, var(--veil-deep), var(--veil)), url('/assets/images/back.gif') center / cover fixed;
+}
+a { color: inherit; text-decoration: none; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; }
+a:focus-visible, button:focus-visible, #game-container:focus-visible { outline: 2px solid var(--focus); outline-offset: 5px; }
+a:hover { color: var(--accent); }
+[hidden] { display: none !important; }
+.skip-link { position: fixed; top: -100px; left: var(--space-2); padding: var(--space-2); background: var(--ink); z-index: 10; }
+.skip-link:focus { top: var(--space-2); }
+.site-nav { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0 var(--space-6); padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: var(--space-2); }
+.brand img { width: 56px; height: 40px; object-fit: contain; }
+.brand > span { font-size: 11px; }
+.brand span span { display: block; font-size: 6px; color: var(--muted); letter-spacing: .12em; }
+.nav-links { display: flex; gap: var(--space-4); font-size: 9px; }
+.nav-links a { padding: 12px 0; }
+.landing { max-width: 1600px; margin: auto; min-height: calc(100svh - 90px); padding: var(--space-8) var(--space-6) var(--space-3); display: grid; grid-template-columns: 1.3fr 1fr; column-gap: var(--space-4); align-items: center; }
+.eyebrow { color: var(--accent); font-size: 8px; letter-spacing: .12em; line-height: 2; }
+.signal { display: inline-block; width: 6px; height: 6px; margin-right: var(--space-1); background: var(--accent); }
+.hero-title { position: relative; font-family: "Star Log Display", sans-serif; font-size: clamp(96px, 12vw, 184px); font-weight: 400; line-height: .83; letter-spacing: -.035em; margin: var(--space-4) 0 var(--space-3); }
+.hero-title > span { color: var(--accent); padding-left: .15em; }
+.hero-title sup { position: absolute; font-family: "Flight Mono", monospace; font-size: 12px; margin: 12px; letter-spacing: 0; }
+.hero-subtitle { letter-spacing: .4em; font-size: 11px; margin: var(--space-4) 0; }
+.hero-copy { color: var(--muted); font-size: 10px; line-height: 2.1; margin-bottom: var(--space-4); }
+.primary-action { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: 56px; padding: var(--space-2) var(--space-3); border: 1px solid var(--accent); border-radius: 0; color: var(--ink); background: var(--accent); font-size: 10px; cursor: pointer; transition: background .18s, color .18s; }
+.primary-action span { font-size: 22px; line-height: 1; }
+.primary-action:hover { background: var(--text); color: var(--ink); }
+.primary-action:disabled { cursor: wait; }
+.action-note { font-size: 8px; line-height: 2; color: var(--muted); margin: var(--space-2) 0 0; }
+.flight-coordinate { align-self: center; padding: var(--space-6) 0 var(--space-6) var(--space-6); border-left: 1px solid var(--line); }
+.crosshair { display: block; position: relative; width: 72px; height: 72px; border: 1px solid var(--line); border-radius: 50%; margin-bottom: var(--space-6); }
+.crosshair::before, .crosshair::after { content: ""; position: absolute; background: var(--accent); }
+.crosshair::before { width: 96px; height: 1px; left: -13px; top: 35px; }
+.crosshair::after { height: 96px; width: 1px; top: -13px; left: 35px; }
+.destination { font-family: "Star Log Display", sans-serif; font-size: clamp(32px, 4vw, 56px); line-height: 1.05; margin: var(--space-3) 0; }
+.coordinate-note { color: var(--muted); font-size: 8px; line-height: 2.2; }
+.mission-details { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--space-6); border-top: 1px solid var(--line); margin-top: var(--space-8); padding-top: var(--space-3); }
+.mission-index { font-family: "Star Log Display", sans-serif; font-size: 40px; }
+.mission-index span { font-family: "Flight Mono", monospace; color: var(--accent); font-size: 8px; vertical-align: middle; }
+.mission-details > p { font-size: 8px; color: var(--muted); }
+.equipment { margin-left: auto; font-size: 8px; text-align: right; }
+.equipment span { display: block; color: var(--muted); font-size: 6px; margin-top: var(--space-1); }
+.game-main { max-width: 880px; margin: var(--space-4) auto; padding: 0 var(--space-3); }
+.game-heading, .flight-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.game-heading { margin-bottom: var(--space-3); }
+.game-heading a { font-size: 8px; padding: 12px 0; }
+.flight-toolbar { padding: var(--space-1) var(--space-2); border: 1px solid var(--line); border-bottom: 0; background: var(--surface-solid); font-size: 8px; }
+.flight-toolbar > span { color: var(--accent); }
+.flight-toolbar button { padding: 12px; min-height: 44px; cursor: pointer; }
+.flight-toolbar button:disabled { opacity: .4; cursor: default; }
+.flight-toolbar button:not(:disabled):hover { color: var(--accent); }
+.game-frame { position: relative; border: 1px solid var(--line); background: var(--surface-solid); }
+#game-container { width: 100%; aspect-ratio: 800 / 550; }
+#game-container canvas { display: block; }
+.mission-gate { position: relative; padding: var(--space-4) var(--space-6); background: var(--surface-solid); }
+.game-frame:has(.mission-gate:not([hidden])) #game-container { position: absolute; inset: 0; }
+.briefing-header { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); color: var(--muted); font-size: 10px; }
+.mission-gate h2 { font-family: "Star Log Display", sans-serif; font-size: clamp(36px, 6vw, 64px); font-weight: 400; line-height: 1; margin: var(--space-4) 0 var(--space-2); overflow-wrap: anywhere; }
+.mission-gate h2 em { color: var(--accent); font-style: normal; }
+.briefing-copy { color: var(--muted); font-size: 9px; line-height: 2; }
+.controls-guide { display: flex; gap: var(--space-8); border-block: 1px solid var(--line); padding: var(--space-3) 0; margin: var(--space-3) 0; }
+.controls-guide > div { display: flex; flex-direction: column; gap: var(--space-1); font-size: 8px; color: var(--muted); }
+.control-number { color: var(--accent); font-size: 7px; }
+.key-row { display: flex; gap: 4px; margin: var(--space-1) 0; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 32px; padding: 4px var(--space-1); background: var(--key); border: 1px solid var(--line); border-bottom: 3px solid var(--muted); color: var(--text); font: inherit; font-size: 9px; }
+.launch-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
+.launch-note { color: var(--muted); font-size: 7px; line-height: 2.2; }
+progress { display: block; accent-color: var(--accent); width: 100%; height: 4px; margin-top: var(--space-3); }
+.game-hint { color: var(--muted); font-size: 7px; line-height: 2.3; padding: var(--space-2) 0; }
+.game-hint span { margin: 0 var(--space-3); }
+@media (min-width: 1024px) { .hero-content { padding-left: var(--space-6); } }
+@media (max-width: 767px) {
+    .site-nav { margin: 0 var(--space-3); padding-block: var(--space-2); }
+    .brand > span { display: none; }
+    .nav-links { gap: var(--space-2); font-size: 7px; }
+    .landing { padding: var(--space-6) var(--space-3) var(--space-3); grid-template-columns: 1fr; }
+    .hero-title { font-size: clamp(96px, 22vw, 160px); }
+    .hero-copy { font-size: 9px; }
+    .flight-coordinate { display: none; }
+    .mission-details { gap: var(--space-3); margin-top: var(--space-6); flex-wrap: wrap; }
+    .equipment { font-size: 7px; }
+    .mission-details > p { font-size: 7px; }
+    .mission-index { font-size: 32px; }
+    .mission-gate { padding: var(--space-3); }
+    .controls-guide { gap: var(--space-3); flex-wrap: wrap; }
+    .game-heading { flex-wrap: wrap; }
+    .game-hint span { margin: 0 var(--space-1); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
