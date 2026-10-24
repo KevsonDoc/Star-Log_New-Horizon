@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Log: New Horizons</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="min-h-screen bg-neutral-900 text-white">
+    <!-- navigation -->
+    <main class="mx-auto mt-3 w-full max-w-[800px]">
+        <h1 class="sr-only">Star Log: New Horizons</h1>
+        <div id="game-container" class="aspect-[800/550] w-full" aria-label="Game area"></div>
+    </main>
+    <script type="importmap">
+        { "imports": { "phaser": "/vendor/phaser.esm.min.js" } }
+    </script>
+    <script type="module" src="/game/index.js"></script>
+</body>
+</html>

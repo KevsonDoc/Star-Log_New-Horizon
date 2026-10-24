@@ -1,0 +1,19 @@
+@import "tailwindcss" source("../");
+@source "../../game";
+
+@font-face {
+    font-family: "Star Log Display";
+    src: url("/assets/fonts/Games-Italic.ttf") format("truetype");
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Star Log Pixel";
+    src: url("/assets/fonts/pdark.ttf") format("truetype");
+    font-display: swap;
+}
+
+@theme {
+    --font-display: "Star Log Display", sans-serif;
+    --font-pixel: "Star Log Pixel", sans-serif;
+}
