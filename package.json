@@ -1,18 +1,47 @@
 {
-  "name": "StarLog-Game",
+  "name": "star-log-new-horizons",
+  "type": "module",
   "version": "1.0.0",
-  "main": "index.js",
-  "repository": "https://github.com/KevsonDoc/StarLog-Game.git",
+  "repository": "https://github.com/KevsonDoc/Star-Log_New-Horizon.git",
   "author": "KevsonDoc <kevsonfilipesantos@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "clean": "node scripts/clean.ts",
+    "build": "npm run clean && npm run build:server && npm run build:game && npm run build:public && npm run build:css",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:game": "tsc -p tsconfig.game.json",
+    "build:public": "node scripts/build-public.ts",
+    "build:css": "tailwindcss -i src/web/styles/app.css -o dist/public/css/app.css --minify",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.game.json --noEmit && tsc -p tsconfig.tools.json",
+    "dev": "npm run build && concurrently -k \"npm:watch:server\" \"npm:watch:game\" \"npm:watch:public\" \"npm:watch:css\" \"npm:dev:server\"",
+    "watch:server": "tsc -p tsconfig.server.json --watch",
+    "watch:game": "tsc -p tsconfig.game.json --watch",
+    "watch:public": "node scripts/build-public.ts --watch",
+    "watch:css": "tailwindcss -i src/web/styles/app.css -o dist/public/css/app.css --watch",
+    "dev:server": "nodemon --watch dist/server --ext js --delay 300ms dist/server/dev/index.js",
+    "start": "node dist/server/index.js",
+    "test": "node --test tests/*.test.ts"
   },
   "dependencies": {
-    "bootstrap4": "^0.0.1-security",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "nodemon": "^2.0.20"
-  }
+    "express": "5.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "@types/connect-livereload": "0.6.3",
+    "@types/express": "5.0.6",
+    "@types/livereload": "0.9.5",
+    "@types/node": "24.19.2",
+    "concurrently": "10.0.6",
+    "connect-livereload": "0.6.1",
+    "livereload": "0.10.3",
+    "nodemon": "3.1.14",
+    "phaser": "4.2.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": "24.22.1",
+    "npm": ">=11"
+  },
+  "packageManager": "npm@11.19.1"
 }
