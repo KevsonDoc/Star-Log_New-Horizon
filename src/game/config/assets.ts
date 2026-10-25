@@ -1,5 +1,4 @@
 export const TEXTURES = {
-    background: 'background',
     laser: 'laser',
     ship: 'ship',
     asteroid: 'asteroid',
@@ -8,7 +7,6 @@ export const TEXTURES = {
 
 const imagesRoot = '/assets/images/';
 export const IMAGES = [
-    { key: TEXTURES.background, url: imagesRoot + 'galaxia1.png' },
     { key: TEXTURES.laser, url: imagesRoot + 'phaser.png' },
 ];
 export const SPRITE_SHEETS = [

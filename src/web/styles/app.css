@@ -374,6 +374,8 @@ button:focus-visible,
     align-items: center;
     justify-content: center;
     padding: var(--space-4);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 #game-container {
@@ -382,6 +384,8 @@ button:focus-visible,
     width: 100vw;
     height: 100svh;
     z-index: 1;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 #game-container:focus-visible {
@@ -392,6 +396,8 @@ button:focus-visible,
     display: block;
     width: 100%;
     height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .mission-gate {
