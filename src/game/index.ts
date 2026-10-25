@@ -1,8 +1,9 @@
-﻿import Phaser from 'phaser';
+import Phaser from 'phaser';
 import { gameConfig } from './config/gameConfig.js';
 
 const launch = document.querySelector<HTMLButtonElement>('#launch-mission')!;
 const gate = document.querySelector<HTMLElement>('#mission-gate')!;
+const pauseModal = document.querySelector<HTMLElement>('#pause-modal');
 const status = document.querySelector<HTMLElement>('#launch-status')!;
 const progress = document.querySelector<HTMLProgressElement>('#load-progress')!;
 const field = document.querySelector<HTMLElement>('#game-container')!;
@@ -13,6 +14,7 @@ let game: Phaser.Game | undefined;
 let countdown: number | undefined;
 let paused = false;
 let failed = false;
+let inFlight = false;
 
 function clearCountdown(): void {
     window.clearInterval(countdown);
@@ -25,6 +27,8 @@ function showBriefing(): void {
     game = undefined;
     failed = false;
     paused = false;
+    inFlight = false;
+    if (pauseModal) pauseModal.hidden = true;
     gate.hidden = false;
     gate.querySelector('h2')!.innerHTML = 'Seu próximo<br><em>horizonte.</em>';
     gate.setAttribute('aria-busy', 'false');
@@ -35,9 +39,30 @@ function showBriefing(): void {
     status.textContent = 'Aguardando seu comando.';
     flightState.textContent = 'PRÉ-VOO';
     pause.disabled = true;
-    pause.textContent = 'Pausar';
+    pause.textContent = 'Retornar';
     restart.disabled = true;
+    restart.hidden = true;
     launch.focus();
+}
+
+function pauseMission(): void {
+    if (!game || !inFlight || pause.disabled || paused) return;
+    paused = true;
+    game.scene.pause('game');
+    if (pauseModal) pauseModal.hidden = false;
+    pause.textContent = 'Retornar';
+    flightState.textContent = 'VOO PAUSADO';
+    pause.focus();
+}
+
+function resumeMission(): void {
+    if (!game || !inFlight || pause.disabled || !paused) return;
+    paused = false;
+    game.scene.resume('game');
+    if (pauseModal) pauseModal.hidden = true;
+    pause.textContent = 'Retornar';
+    flightState.textContent = 'EM VOO';
+    field.focus();
 }
 
 function startCountdown(instance: Phaser.Game): void {
@@ -59,6 +84,9 @@ function startCountdown(instance: Phaser.Game): void {
         clearCountdown();
         gate.hidden = true;
         gate.setAttribute('aria-busy', 'false');
+        inFlight = true;
+        paused = false;
+        if (pauseModal) pauseModal.hidden = true;
         flightState.textContent = 'EM VOO';
         pause.disabled = false;
         field.focus();
@@ -74,6 +102,7 @@ launch.addEventListener('click', () => {
     status.textContent = 'Carregando os sistemas da missão…';
     flightState.textContent = 'CARREGANDO';
     failed = false;
+    inFlight = false;
     game = new Phaser.Game({
         ...gameConfig,
         callbacks: {
@@ -89,17 +118,22 @@ launch.addEventListener('click', () => {
                 });
                 instance.events.once('mission-load-error', () => {
                     failed = true;
+                    inFlight = false;
                     clearCountdown();
                     progress.hidden = true;
                     gate.setAttribute('aria-busy', 'false');
                     status.textContent = 'Não foi possível carregar a missão. Volte à preparação para tentar novamente.';
                     launch.textContent = 'Falha no carregamento';
                     flightState.textContent = 'FALHA NO CARREGAMENTO';
+                    restart.hidden = false;
                     restart.disabled = false;
                     restart.textContent = 'Voltar à preparação';
                     restart.focus();
                 });
                 instance.events.once('mission-ended', (won: boolean) => {
+                    inFlight = false;
+                    paused = false;
+                    if (pauseModal) pauseModal.hidden = true;
                     flightState.textContent = won ? 'MISSÃO CONCLUÍDA' : 'NAVE DESTRUÍDA';
                     pause.disabled = true;
                     status.textContent = won ? 'Missão concluída. Você pode iniciar um novo voo.' : 'Sua nave foi atingida. Pronto para tentar de novo?';
@@ -111,6 +145,7 @@ launch.addEventListener('click', () => {
                     game?.destroy(true);
                     game = undefined;
                     restart.disabled = true;
+                    restart.hidden = true;
                     launch.focus();
                 });
             },
@@ -119,19 +154,23 @@ launch.addEventListener('click', () => {
 });
 
 pause.addEventListener('click', () => {
-    if (!game || pause.disabled) return;
-    paused = !paused;
-    if (paused) game.scene.pause('game');
-    else game.scene.resume('game');
-    pause.textContent = paused ? 'Continuar' : 'Pausar';
-    flightState.textContent = paused ? 'VOO PAUSADO' : 'EM VOO';
-    if (!paused) field.focus();
+    if (paused) resumeMission();
+    else pauseMission();
 });
 restart.addEventListener('click', () => {
     showBriefing();
     restart.textContent = 'Reiniciar';
 });
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden && game && !pause.disabled && !paused) pause.click();
+    if (document.hidden) pauseMission();
+});
+window.addEventListener('blur', () => {
+    pauseMission();
+});
+window.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || !inFlight) return;
+    event.preventDefault();
+    if (paused) resumeMission();
+    else pauseMission();
 });
 window.addEventListener('pagehide', clearCountdown);

@@ -3,31 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#10120f">
+    <meta name="theme-color" content="#05070a">
     <title>Star Log: New Horizons</title>
+    <link rel="icon" type="image/png" href="/assets/images/USSamazonia.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Orbitron:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css">
 </head>
 <body class="space-page">
     <!-- navigation -->
-    <main class="landing" id="main">
-        <div class="hero-content">
-            <p class="eyebrow"><span class="signal" aria-hidden="true"></span> REGISTRO DE VOO / 001</p>
-            <h1 class="hero-title">STAR<br><span>LOG</span><sup aria-hidden="true">+</sup></h1>
-            <p class="hero-subtitle">NEW HORIZONS</p>
-            <p class="hero-copy">Há um novo horizonte lá fora.<br>Assuma o comando e encontre o seu.</p>
-            <a href="/star" class="primary-action">Preparar missão <span aria-hidden="true">↗</span></a>
-            <p class="action-note">Veja os controles. Decole no seu tempo.</p>
-        </div>
-        <aside class="flight-coordinate" aria-label="Objetivo da missão">
-            <span class="crosshair" aria-hidden="true"></span>
-            <p class="eyebrow">SEU PRÓXIMO DESTINO</p>
-            <p class="destination">Além do<br>conhecido.</p>
-            <p class="coordinate-note">Uma nave. Um asteroide.<br>O espaço entre eles é seu.</p>
-        </aside>
-        <footer class="mission-details">
-            <span class="mission-index">01 <span>/ MISSÃO</span></span>
-            <p>Desvie das bombas.<br>Destrua o asteroide.</p>
-            <span class="equipment">TECLADO + MOUSE<span>PRONTO PARA COMANDO</span></span>
+
+    <main id="main" class="horizon-stage">
+        <section class="hero-minimal" aria-labelledby="hero-title">
+            <p class="hero-overline">NEW HORIZONS</p>
+            <h1 id="hero-title" class="hero-title">STAR LOG</h1>
+            <p class="hero-lead">
+                Uma nave. Um asteroide em rota de colisão.<br>
+                O vazio entre eles é seu.
+            </p>
+            <div class="hero-action">
+                <a href="/star" class="horizon-cta">
+                    <span>Iniciar missão</span>
+                </a>
+            </div>
+        </section>
+
+        <footer class="horizon-footer" aria-label="Detalhes da experiência">
+            <span>USS AMAZÔNIA</span>
+            <span class="footer-sep" aria-hidden="true"></span>
+            <span>WASD · ESPAÇO · MOUSE</span>
+            <span class="footer-sep" aria-hidden="true"></span>
+            <span>NAVEGADOR DESKTOP</span>
         </footer>
     </main>
 </body>
