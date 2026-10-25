@@ -7,6 +7,10 @@ const GALAXY = [P.voidDeep, P.voidDark, P.voidMid, P.nebulaShadow,
 const EMBERS = [P.emberShadow, P.emberDark, P.emberMid,
     P.emberLight, P.emberBright, P.starBright];
 export const HOLE_FRAME = { width: 160, height: 104, count: 16 } as const;
+export const LASER_FRAME = { width: 28, height: 32, count: 4 } as const;
+export const MUZZLE_FRAME = { width: 32, height: 18, count: 4 } as const;
+export const IMPACT_FRAME = { width: 36, height: 36, count: 6 } as const;
+export const SPARK_FRAME = { width: 5, height: 5, count: 6 } as const;
 
 function hash(x: number, y: number): number {
     let n = Math.imul(x, 374761393) + Math.imul(y, 668265263);
@@ -179,4 +183,263 @@ export function drawTwinkleSheet(ctx: CanvasRenderingContext2D): void {
         ctx.fillStyle = cores[i]!;
         ctx.fillRect(x, 3, 1, 1);
     }
+}
+
+
+/**
+ * 4-frame triple-beam phaser volley with subpixel color-shifted energy nodes
+ * and hue-shifted plasma ramps (cool shadow -> warm ember -> cyan/white core).
+ */
+export function drawLaserSheet(ctx: CanvasRenderingContext2D): void {
+    ctx.imageSmoothingEnabled = false;
+    const { width, height, count } = LASER_FRAME;
+    for (let frame = 0; frame < count; frame++) {
+        const ox = frame * width;
+        // Center main phaser lance (x = 12..15, y = 1..29)
+        for (let y = 1; y < 30; y++) {
+            const pulse = (y + frame * 2) % 6;
+            if (y <= 3) {
+                ctx.fillStyle = y === 1 ? P.starCyan : P.starBright;
+                ctx.fillRect(ox + 13, y, 2, 1);
+                if (y >= 2) {
+                    ctx.fillStyle = P.emberBright;
+                    ctx.fillRect(ox + 12, y, 1, 1);
+                    ctx.fillRect(ox + 15, y, 1, 1);
+                }
+                continue;
+            }
+            if (y >= 25) {
+                const tailShade = Math.max(0, Math.min(3, Math.floor((30 - y) * 0.8 + dither(13 + frame, y))));
+                if (tailShade > 0) {
+                    ctx.fillStyle = EMBERS[tailShade]!;
+                    ctx.fillRect(ox + 13, y, 2, 1);
+                }
+                if ((y + frame) % 2 === 0 && y < 28) {
+                    ctx.fillStyle = P.emberShadow;
+                    ctx.fillRect(ox + 12, y, 1, 1);
+                    ctx.fillRect(ox + 15, y, 1, 1);
+                }
+                continue;
+            }
+            // Subpixel energy nodes travel up the core via color shifting
+            const coreColor = pulse === 0 ? P.starBright : pulse === 1 ? P.starCyan : P.emberBright;
+            const sheathColor = pulse < 2 ? P.emberLight : pulse < 4 ? P.emberMid : P.emberDark;
+            ctx.fillStyle = sheathColor;
+            ctx.fillRect(ox + 12, y, 1, 1);
+            ctx.fillRect(ox + 15, y, 1, 1);
+            ctx.fillStyle = coreColor;
+            ctx.fillRect(ox + 13, y, 2, 1);
+            // Periodic side fins for silhouette readability at 1x zoom
+            if (pulse === 1 && y > 5 && y < 22) {
+                ctx.fillStyle = P.emberShadow;
+                ctx.fillRect(ox + 11, y, 1, 1);
+                ctx.fillRect(ox + 16, y, 1, 1);
+            }
+        }
+
+        // Twin wing-cannon bolts (left: x = 4..5, right: x = 22..23, y = 8..27)
+        for (const bx of [4, 22]) {
+            for (let y = 8; y < 28; y++) {
+                const pulse = (y + frame * 2 + 3) % 5;
+                if (y <= 10) {
+                    ctx.fillStyle = y === 8 ? P.starCyan : P.starBright;
+                    ctx.fillRect(ox + bx, y, 2, 1);
+                    continue;
+                }
+                if (y >= 24) {
+                    if ((y + frame) % 2 === 0) {
+                        ctx.fillStyle = y === 24 ? P.emberMid : P.emberDark;
+                        ctx.fillRect(ox + bx, y, 2, 1);
+                    }
+                    continue;
+                }
+                ctx.fillStyle = pulse === 0 ? P.starBright : pulse < 3 ? P.emberBright : P.emberLight;
+                ctx.fillRect(ox + bx, y, 2, 1);
+                ctx.fillStyle = pulse < 2 ? P.emberMid : P.emberDark;
+                ctx.fillRect(ox + bx - 1, y, 1, 1);
+                ctx.fillRect(ox + bx + 2, y, 1, 1);
+            }
+        }
+
+        // Subtle plasma arc chevron linking wing bolts to central lance
+        const arcY = 12 + (frame % 3) * 2;
+        ctx.fillStyle = frame % 2 === 0 ? P.starCyan : P.emberLight;
+        ctx.fillRect(ox + 7, arcY + 2, 2, 1);
+        ctx.fillRect(ox + 9, arcY + 1, 2, 1);
+        ctx.fillRect(ox + 19, arcY + 2, 2, 1);
+        ctx.fillRect(ox + 17, arcY + 1, 2, 1);
+    }
+    void height;
+}
+
+/** 4-frame snappy muzzle flash for the central nose and twin wing cannons. */
+export function drawMuzzleFlashSheet(ctx: CanvasRenderingContext2D): void {
+    ctx.imageSmoothingEnabled = false;
+    const { width } = MUZZLE_FRAME;
+    for (let frame = 0; frame < MUZZLE_FRAME.count; frame++) {
+        const ox = frame * width;
+        if (frame === 0) {
+            // Frame 0: Ignition star-cross burst
+            ctx.fillStyle = P.emberBright;
+            ctx.fillRect(ox + 12, 5, 8, 6);
+            ctx.fillRect(ox + 14, 2, 4, 12);
+            ctx.fillRect(ox + 8, 7, 16, 2);
+            ctx.fillStyle = P.starCyan;
+            ctx.fillRect(ox + 13, 6, 6, 4);
+            ctx.fillRect(ox + 15, 0, 2, 15);
+            ctx.fillStyle = P.starBright;
+            ctx.fillRect(ox + 14, 6, 4, 4);
+            // Wing cannon flashes
+            for (const wx of [5, 25]) {
+                ctx.fillStyle = P.emberLight;
+                ctx.fillRect(ox + wx - 2, 11, 6, 4);
+                ctx.fillStyle = P.starBright;
+                ctx.fillRect(ox + wx - 1, 10, 4, 4);
+            }
+        } else if (frame === 1) {
+            // Frame 1: Expanding V-chevron plasma wave
+            ctx.fillStyle = P.emberMid;
+            ctx.fillRect(ox + 10, 3, 12, 8);
+            ctx.fillStyle = P.emberBright;
+            ctx.fillRect(ox + 11, 4, 10, 4);
+            ctx.fillRect(ox + 6, 6, 20, 2);
+            ctx.fillStyle = P.starBright;
+            ctx.fillRect(ox + 14, 3, 4, 4);
+            for (const wx of [5, 25]) {
+                ctx.fillStyle = P.emberBright;
+                ctx.fillRect(ox + wx - 2, 10, 5, 3);
+                ctx.fillStyle = P.starCyan;
+                ctx.fillRect(ox + wx, 9, 2, 3);
+            }
+        } else if (frame === 2) {
+            // Frame 2: Separating plasma crescents & ejecta
+            ctx.fillStyle = P.emberLight;
+            ctx.fillRect(ox + 9, 3, 4, 3);
+            ctx.fillRect(ox + 19, 3, 4, 3);
+            ctx.fillRect(ox + 14, 1, 4, 2);
+            ctx.fillStyle = P.emberMid;
+            ctx.fillRect(ox + 7, 5, 3, 2);
+            ctx.fillRect(ox + 22, 5, 3, 2);
+            for (const wx of [4, 26]) {
+                ctx.fillStyle = P.emberMid;
+                ctx.fillRect(ox + wx, 9, 3, 2);
+            }
+        } else {
+            // Frame 3: Residual cooling embers
+            ctx.fillStyle = P.emberDark;
+            ctx.fillRect(ox + 8, 2, 2, 2);
+            ctx.fillRect(ox + 22, 2, 2, 2);
+            ctx.fillRect(ox + 15, 0, 2, 2);
+            ctx.fillStyle = P.emberShadow;
+            ctx.fillRect(ox + 4, 8, 2, 2);
+            ctx.fillRect(ox + 26, 8, 2, 2);
+        }
+    }
+}
+
+/** 6-frame asteroid impact blast & dithered shockwave ring on the pixel grid. */
+export function drawImpactSheet(ctx: CanvasRenderingContext2D): void {
+    ctx.imageSmoothingEnabled = false;
+    const { width, height, count } = IMPACT_FRAME;
+    const cx = width / 2, cy = height / 2;
+    for (let frame = 0; frame < count; frame++) {
+        const ox = frame * width;
+        const innerR = frame === 0 ? 0 : (frame - 1) * 2.6;
+        const outerR = 6 + frame * 2.1;
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const dx = x - cx + 0.5, dy = y - cy + 0.5;
+                const r = Math.hypot(dx, dy);
+                const angle = Math.atan2(dy, dx);
+                const ray = Math.cos(angle * 4 + frame * 0.7) * 1.4;
+                let color: string | undefined;
+
+                if (frame === 0) {
+                    if (r < 4.2) color = P.starBright;
+                    else if (r < 6.5 + ray) color = r < 5.2 ? P.starCyan : P.emberBright;
+                    else if ((Math.abs(dx) < 1.2 && Math.abs(dy) < 12) || (Math.abs(dy) < 1.2 && Math.abs(dx) < 12)) {
+                        color = P.emberBright;
+                    }
+                } else if (frame === 1) {
+                    if (r < 3.5) color = P.starBright;
+                    else if (r < 6.2) color = P.emberBright;
+                    else if (r < 9.5 + ray) color = P.emberLight;
+                    else if (r < 11.2 + ray && dither(x, y) > -0.1) color = P.emberMid;
+                } else {
+                    const band = r - innerR + ray * 0.6;
+                    const span = Math.max(2, outerR - innerR);
+                    if (r >= innerR - 0.8 && r <= outerR + ray * 0.8) {
+                        const norm = 1 - Math.max(0, Math.min(1, band / span));
+                        const shadeIdx = Math.floor(norm * (6 - frame * 0.65) + dither(x + frame, y));
+                        if (shadeIdx >= 0) {
+                            if (frame === 2 && shadeIdx >= 4) color = P.starCyan;
+                            else color = EMBERS[Math.min(5, shadeIdx)];
+                        }
+                    }
+                    // Ionized outer rim pixels on frames 2-3
+                    if ((frame === 2 || frame === 3) && Math.abs(r - outerR) < 0.9 && (x + y + frame) % 3 === 0) {
+                        color = P.nebulaLight;
+                    }
+                }
+
+                if (color) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(ox + x, y, 1, 1);
+                }
+            }
+        }
+    }
+}
+
+/** 6-frame 5x5 pixel-art spark, plasma, and rock debris sheet for ParticleEmitter. */
+export function drawSparkSheet(ctx: CanvasRenderingContext2D): void {
+    ctx.imageSmoothingEnabled = false;
+    const { width } = SPARK_FRAME;
+    // Frame 0: White-cyan star spark
+    ctx.fillStyle = P.starCyan;
+    ctx.fillRect(2, 0, 1, 5);
+    ctx.fillRect(0, 2, 5, 1);
+    ctx.fillStyle = P.starBright;
+    ctx.fillRect(2, 2, 1, 1);
+
+    // Frame 1: Cyan ion diamond
+    const f1 = width;
+    ctx.fillStyle = P.starCool;
+    ctx.fillRect(f1 + 1, 2, 3, 1);
+    ctx.fillRect(f1 + 2, 1, 1, 3);
+    ctx.fillStyle = P.starCyan;
+    ctx.fillRect(f1 + 2, 2, 1, 1);
+
+    // Frame 2: Solar gold plasma spark
+    const f2 = width * 2;
+    ctx.fillStyle = P.emberLight;
+    ctx.fillRect(f2 + 1, 2, 3, 1);
+    ctx.fillRect(f2 + 2, 1, 1, 3);
+    ctx.fillStyle = P.emberBright;
+    ctx.fillRect(f2 + 2, 2, 1, 1);
+
+    // Frame 3: Molten slag chunk (top-left lit)
+    const f3 = width * 3;
+    ctx.fillStyle = P.emberDark;
+    ctx.fillRect(f3 + 1, 1, 3, 3);
+    ctx.fillStyle = P.emberLight;
+    ctx.fillRect(f3 + 1, 1, 2, 2);
+    ctx.fillStyle = P.emberBright;
+    ctx.fillRect(f3 + 1, 1, 1, 1);
+
+    // Frame 4: Cooling crimson ember
+    const f4 = width * 4;
+    ctx.fillStyle = P.emberShadow;
+    ctx.fillRect(f4 + 1, 1, 3, 3);
+    ctx.fillStyle = P.emberMid;
+    ctx.fillRect(f4 + 1, 1, 2, 2);
+
+    // Frame 5: Asteroid rock fragment (top-left light source, selout shadow)
+    const f5 = width * 5;
+    ctx.fillStyle = P.planetShadow;
+    ctx.fillRect(f5 + 1, 1, 3, 3);
+    ctx.fillStyle = P.planetMid;
+    ctx.fillRect(f5 + 1, 1, 2, 2);
+    ctx.fillStyle = P.planetHighlight;
+    ctx.fillRect(f5 + 1, 1, 1, 1);
 }

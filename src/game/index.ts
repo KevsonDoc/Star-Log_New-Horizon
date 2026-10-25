@@ -153,6 +153,22 @@ launch.addEventListener('click', () => {
     });
 });
 
+function cycleMenuFocus(container: HTMLElement | null, direction: 1 | -1): boolean {
+    if (!container || container.hidden) return false;
+    const rawItems = container.querySelectorAll?.<HTMLElement>('button, a[href]');
+    if (!rawItems) return false;
+    const items = Array.from(rawItems).filter(
+        (item) => !item.hidden && !(item as HTMLButtonElement).disabled,
+    );
+    if (items.length === 0) return false;
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex = currentIndex < 0
+        ? (direction > 0 ? 0 : items.length - 1)
+        : (currentIndex + direction + items.length) % items.length;
+    items[nextIndex]?.focus();
+    return true;
+}
+
 pause.addEventListener('click', () => {
     if (paused) resumeMission();
     else pauseMission();
@@ -163,11 +179,32 @@ restart.addEventListener('click', () => {
 });
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseMission();
+    else if (paused) pause.focus();
 });
 window.addEventListener('blur', () => {
     pauseMission();
 });
+window.addEventListener('focus', () => {
+    if (paused && pauseModal && !pauseModal.hidden) {
+        const items = Array.from(pauseModal.querySelectorAll?.<HTMLElement>('button, a[href]') ?? []);
+        if (!items.includes(document.activeElement as HTMLElement)) {
+            pause.focus();
+        }
+    }
+});
 window.addEventListener('keydown', (event: KeyboardEvent) => {
+    const isDownKey = event.key === 'ArrowDown' || event.key === 's' || event.key === 'S';
+    const isUpKey = event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W';
+    if (isDownKey || isUpKey) {
+        const direction = isDownKey ? 1 : -1;
+        const activeMenu = paused && pauseModal && !pauseModal.hidden
+            ? pauseModal
+            : (!gate.hidden ? gate : null);
+        if (cycleMenuFocus(activeMenu, direction)) {
+            event.preventDefault();
+        }
+        return;
+    }
     if (event.key !== 'Escape' || !inFlight) return;
     event.preventDefault();
     if (paused) resumeMission();

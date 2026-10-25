@@ -22,22 +22,46 @@ class Element {
     attributes = new Map<string, string>();
     listeners = new Map<string, () => void>();
     heading?: Element;
+    actions: Element[] = [];
+    onFocus?: (element: Element) => void;
     addEventListener(name: string, handler: () => void) { this.listeners.set(name, handler); }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
-    focus() { this.focused = true; }
+    focus() {
+        this.focused = true;
+        this.onFocus?.(this);
+    }
     querySelector() { return this.heading; }
+    querySelectorAll() { return this.actions; }
     click() { if (!this.disabled) this.listeners.get('click')?.(); }
 }
 
 function setup() {
     const nodes = new Map<string, Element>();
+    const document: {
+        hidden: boolean;
+        activeElement?: Element | undefined;
+        querySelector: (selector: string) => Element | undefined;
+        addEventListener: (name: string, handler: () => void) => void;
+    } = {
+        hidden: false,
+        activeElement: undefined,
+        querySelector: (selector: string) => nodes.get(selector),
+        addEventListener: (name: string, handler: () => void) => documentEvents.set(name, handler),
+    };
+    const makeElement = () => {
+        const el = new Element();
+        el.onFocus = (target) => { document.activeElement = target; };
+        return el;
+    };
     for (const id of ['launch-mission', 'mission-gate', 'pause-modal', 'launch-status', 'load-progress',
-        'game-container', 'flight-state', 'pause-mission', 'restart-mission']) {
-        nodes.set('#' + id, new Element());
+        'game-container', 'flight-state', 'pause-mission', 'restart-mission', 'project-link', 'station-link']) {
+        nodes.set('#' + id, makeElement());
     }
     const element = (id: string) => nodes.get('#' + id)!;
-    element('mission-gate').heading = new Element();
+    element('mission-gate').heading = makeElement();
+    element('mission-gate').actions = [element('launch-mission'), element('restart-mission')];
     element('pause-modal').hidden = true;
+    element('pause-modal').actions = [element('pause-mission'), element('project-link'), element('station-link')];
     element('pause-mission').disabled = true;
     element('restart-mission').disabled = true;
     element('restart-mission').hidden = true;
@@ -60,11 +84,6 @@ function setup() {
     let nextTimer = 0;
     const documentEvents = new Map<string, () => void>();
     const windowEvents = new Map<string, (event?: unknown) => void>();
-    const document = {
-        hidden: false,
-        querySelector: (selector: string) => nodes.get(selector),
-        addEventListener: (name: string, handler: () => void) => documentEvents.set(name, handler),
-    };
     runInNewContext(source, {
         Phaser: { Game: FakeGame }, gameConfig: {}, document,
         window: {
@@ -124,7 +143,7 @@ test('a failed asset load cannot start a match and can return to preparation', (
     assert.equal(ui.games.length, 2);
 });
 
-test('leaving the tab or pressing Escape opens the pause modal and the player can resume or retry after losing', () => {
+test('leaving the tab or pressing Escape opens the pause modal and ArrowUp/ArrowDown cycles through menu buttons', () => {
     const ui = setup();
     ui.element('launch-mission').click();
     const game = ui.games[0]!;
@@ -135,6 +154,18 @@ test('leaving the tab or pressing Escape opens the pause modal and the player ca
     assert.equal(game.scenePaused, true);
     assert.equal(ui.element('pause-modal').hidden, false);
     assert.equal(ui.element('pause-mission').textContent, 'Retornar');
+    assert.equal(ui.document.activeElement, ui.element('pause-mission'));
+
+    // Navigate pause menu buttons with ArrowDown and ArrowUp
+    ui.windowEvents.get('keydown')!({ key: 'ArrowDown', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('project-link'));
+    ui.windowEvents.get('keydown')!({ key: 'ArrowDown', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('station-link'));
+    ui.windowEvents.get('keydown')!({ key: 'ArrowDown', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('pause-mission'));
+    ui.windowEvents.get('keydown')!({ key: 'ArrowUp', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('station-link'));
+
     ui.document.hidden = false;
     ui.element('pause-mission').click();
     assert.equal(game.scenePaused, false);
@@ -143,6 +174,11 @@ test('leaving the tab or pressing Escape opens the pause modal and the player ca
     ui.windowEvents.get('keydown')!({ key: 'Escape', preventDefault: () => {} });
     assert.equal(game.scenePaused, true);
     assert.equal(ui.element('pause-modal').hidden, false);
+    assert.equal(ui.document.activeElement, ui.element('pause-mission'));
+    ui.windowEvents.get('keydown')!({ key: 's', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('project-link'));
+    ui.windowEvents.get('keydown')!({ key: 'W', preventDefault: () => {} });
+    assert.equal(ui.document.activeElement, ui.element('pause-mission'));
     ui.windowEvents.get('keydown')!({ key: 'Escape', preventDefault: () => {} });
     assert.equal(game.scenePaused, false);
     assert.equal(ui.element('pause-modal').hidden, true);
