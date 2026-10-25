@@ -7,6 +7,11 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     parent: 'game-container',
     width: GAME_SETTINGS.width,
     height: GAME_SETTINGS.height,
+    render: {
+        pixelArt: true,
+        roundPixels: true,
+        antialias: false,
+    },
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.NO_CENTER,

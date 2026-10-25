@@ -25,7 +25,7 @@ export class ProjectileSystem {
         const projectile: unknown = this.group.get(x, y, TEXTURES.laser);
         if (!(projectile instanceof Phaser.Physics.Arcade.Sprite)) return;
         projectile.enableBody(true, x, y, true, true);
-        projectile.setVelocity(0, GAME_SETTINGS.laserSpeed);
+        projectile.setDepth(1).setVelocity(0, GAME_SETTINGS.laserSpeed);
     }
 
     update(): void {
