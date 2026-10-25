@@ -7,6 +7,7 @@ import { ProjectileSystem } from '../systems/ProjectileSystem.js';
 
 export class GameScene extends Phaser.Scene {
     private match!: Match;
+    private background!: Phaser.GameObjects.TileSprite;
     private player!: Phaser.Physics.Arcade.Sprite;
     private asteroid!: Phaser.Physics.Arcade.Sprite;
     private healthLabel!: Phaser.GameObjects.Text;
@@ -36,14 +37,17 @@ export class GameScene extends Phaser.Scene {
         this.match = new Match();
         this.firing = false;
         this.ready = false;
-        this.add.image(400, 300, TEXTURES.background);
-        this.createPlayer();
-        this.createAsteroid();
+
+        const width = this.scale.width || GAME_SETTINGS.width;
+        const height = this.scale.height || GAME_SETTINGS.height;
+        this.physics.world.setBounds(0, 0, width, height);
+        this.background = this.add.tileSprite(0, 0, width, height, TEXTURES.background).setOrigin(0, 0);
+
+        this.createPlayer(width, height);
+        this.createAsteroid(width);
         this.createExplosion();
         this.createHealthLabel();
 
-        const bombs = this.createBombs();
-        this.physics.add.collider(this.player, bombs, () => this.hitPlayer());
         this.projectiles = new ProjectileSystem(this, this.asteroid, () => this.hitAsteroid());
         this.controls = new KeyboardControls(this.input.keyboard);
         this.input.on('pointerdown', this.fireLaser, this);
@@ -51,6 +55,8 @@ export class GameScene extends Phaser.Scene {
         this.input.on('pointerupoutside', this.releaseTrigger, this);
         this.input.keyboard?.on('keydown-SPACE', this.fireLaser, this);
         this.input.keyboard?.on('keyup-SPACE', this.releaseTrigger, this);
+        this.scale.on('resize', this.handleResize, this);
+        this.events.on(Phaser.Scenes.Events.PAUSE, this.handlePause, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
         this.physics.pause();
         this.game.events.once('mission-start', () => {
@@ -67,26 +73,14 @@ export class GameScene extends Phaser.Scene {
         this.projectiles.update();
     }
 
-    private createPlayer(): void {
-        this.player = this.physics.add.sprite(100, 450, TEXTURES.ship);
+    private createPlayer(width: number, height: number): void {
+        this.player = this.physics.add.sprite(width / 2, Math.max(220, height - 100), TEXTURES.ship);
         this.player.setCollideWorldBounds(true);
     }
 
-    private createAsteroid(): void {
-        this.asteroid = this.physics.add.sprite(100, 100, TEXTURES.asteroid);
+    private createAsteroid(width: number): void {
+        this.asteroid = this.physics.add.sprite(width / 2, 120, TEXTURES.asteroid);
         this.asteroid.setImmovable(true).setCollideWorldBounds(true);
-        this.asteroid.setVelocityX(GAME_SETTINGS.asteroidSpeed).setBounce(1);
-    }
-
-    private createBombs(): Phaser.Physics.Arcade.Group {
-        const bombs = this.physics.add.group();
-        for (let index = 0; index < GAME_SETTINGS.bombCount; index += 1) {
-            const bomb: unknown = bombs.create(Phaser.Math.Between(150, 550), Phaser.Math.Between(150, 550), TEXTURES.bomb);
-            if (!(bomb instanceof Phaser.Physics.Arcade.Sprite)) continue;
-            bomb.setCollideWorldBounds(true).setBounce(Phaser.Math.FloatBetween(0.6, 0.9));
-            bomb.setVelocity(Phaser.Math.Between(-500, 800), Phaser.Math.Between(-400, 750));
-        }
-        return bombs;
     }
 
     private createExplosion(): void {
@@ -99,9 +93,32 @@ export class GameScene extends Phaser.Scene {
     }
 
     private createHealthLabel(): void {
-        this.healthLabel = this.add.text(16, 16, 'VIDA ASTEROID: ' + this.match.asteroidHealth, {
+        this.healthLabel = this.add.text(24, 24, 'VIDA ASTEROID: ' + this.match.asteroidHealth, {
             fontSize: '32px', color: '#8B0000',
         });
+    }
+
+    private handleResize(gameSize: Phaser.Structs.Size): void {
+        const width = gameSize.width || GAME_SETTINGS.width;
+        const height = gameSize.height || GAME_SETTINGS.height;
+        this.physics.world.setBounds(0, 0, width, height);
+        this.background?.setSize(width, height);
+        if (this.asteroid?.active) {
+            this.asteroid.setPosition(width / 2, 120);
+            this.asteroid.body?.updateFromGameObject();
+        }
+        if (this.player?.active) {
+            this.player.setPosition(
+                Phaser.Math.Clamp(this.player.x, 30, Math.max(30, width - 30)),
+                Phaser.Math.Clamp(this.player.y, 30, Math.max(30, height - 30)),
+            );
+        }
+    }
+
+    private handlePause(): void {
+        this.firing = false;
+        this.player?.setVelocity(0, 0);
+        this.input.keyboard?.resetKeys();
     }
 
     private fireLaser(): void {
@@ -122,15 +139,10 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    private hitPlayer(): void {
-        if (!this.match.isRunning) return;
-        this.match.hitPlayer();
-        this.player.play('explosion', true);
-        if (this.match.status === 'lost') this.finishMatch('Game Over', '#8B0000');
-    }
-
     private finishMatch(message: string, color: string): void {
-        this.add.text(150, 250, message, { fontSize: '90px', color });
+        const width = this.scale.width || GAME_SETTINGS.width;
+        const height = this.scale.height || GAME_SETTINGS.height;
+        this.add.text(width / 2, height / 2, message, { fontSize: '90px', color }).setOrigin(0.5);
         this.physics.pause();
         this.game.events.emit('mission-ended', this.match.status === 'won');
     }
@@ -141,6 +153,8 @@ export class GameScene extends Phaser.Scene {
         this.input.off('pointerupoutside', this.releaseTrigger, this);
         this.input.keyboard?.off('keydown-SPACE', this.fireLaser, this);
         this.input.keyboard?.off('keyup-SPACE', this.releaseTrigger, this);
+        this.scale.off('resize', this.handleResize, this);
+        this.events.off(Phaser.Scenes.Events.PAUSE, this.handlePause, this);
         this.projectiles.destroy();
     }
 }

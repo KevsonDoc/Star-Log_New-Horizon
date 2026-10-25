@@ -8,5 +8,10 @@
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.server.json" },
+    { "path": "./tsconfig.game.json" },
+    { "path": "./tsconfig.tools.json" }
+  ]
 }

@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { stripTypeScriptTypes } from 'node:module';
@@ -31,14 +31,16 @@ class Element {
 
 function setup() {
     const nodes = new Map<string, Element>();
-    for (const id of ['launch-mission', 'mission-gate', 'launch-status', 'load-progress',
+    for (const id of ['launch-mission', 'mission-gate', 'pause-modal', 'launch-status', 'load-progress',
         'game-container', 'flight-state', 'pause-mission', 'restart-mission']) {
         nodes.set('#' + id, new Element());
     }
     const element = (id: string) => nodes.get('#' + id)!;
     element('mission-gate').heading = new Element();
+    element('pause-modal').hidden = true;
     element('pause-mission').disabled = true;
     element('restart-mission').disabled = true;
+    element('restart-mission').hidden = true;
     const games: FakeGame[] = [];
     class FakeGame {
         events = new EventEmitter();
@@ -57,6 +59,7 @@ function setup() {
     const timers = new Map<number, () => void>();
     let nextTimer = 0;
     const documentEvents = new Map<string, () => void>();
+    const windowEvents = new Map<string, (event?: unknown) => void>();
     const document = {
         hidden: false,
         querySelector: (selector: string) => nodes.get(selector),
@@ -67,11 +70,11 @@ function setup() {
         window: {
             setInterval: (callback: () => void) => { timers.set(++nextTimer, callback); return nextTimer; },
             clearInterval: (id: number) => timers.delete(id),
-            addEventListener: () => {},
+            addEventListener: (name: string, handler: (event?: unknown) => void) => windowEvents.set(name, handler),
         },
     });
     return {
-        element, games, document, documentEvents,
+        element, games, document, documentEvents, windowEvents,
         tick: () => { for (const timer of [...timers.values()]) timer(); },
     };
 }
@@ -121,7 +124,7 @@ test('a failed asset load cannot start a match and can return to preparation', (
     assert.equal(ui.games.length, 2);
 });
 
-test('leaving the tab pauses the mission and the player can resume or retry after losing', () => {
+test('leaving the tab or pressing Escape opens the pause modal and the player can resume or retry after losing', () => {
     const ui = setup();
     ui.element('launch-mission').click();
     const game = ui.games[0]!;
@@ -130,12 +133,23 @@ test('leaving the tab pauses the mission and the player can resume or retry afte
     ui.document.hidden = true;
     ui.documentEvents.get('visibilitychange')!();
     assert.equal(game.scenePaused, true);
-    assert.equal(ui.element('pause-mission').textContent, 'Continuar');
+    assert.equal(ui.element('pause-modal').hidden, false);
+    assert.equal(ui.element('pause-mission').textContent, 'Retornar');
     ui.document.hidden = false;
     ui.element('pause-mission').click();
     assert.equal(game.scenePaused, false);
+    assert.equal(ui.element('pause-modal').hidden, true);
+
+    ui.windowEvents.get('keydown')!({ key: 'Escape', preventDefault: () => {} });
+    assert.equal(game.scenePaused, true);
+    assert.equal(ui.element('pause-modal').hidden, false);
+    ui.windowEvents.get('keydown')!({ key: 'Escape', preventDefault: () => {} });
+    assert.equal(game.scenePaused, false);
+    assert.equal(ui.element('pause-modal').hidden, true);
+
     game.events.emit('mission-ended', false);
     assert.equal(ui.element('mission-gate').hidden, false);
+    assert.equal(ui.element('pause-modal').hidden, true);
     assert.equal(ui.element('launch-mission').disabled, false);
     assert.equal(game.destroyed, true);
     ui.element('launch-mission').click();

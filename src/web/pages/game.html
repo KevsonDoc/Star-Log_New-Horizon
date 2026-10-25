@@ -3,32 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#10120f">
+    <meta name="theme-color" content="#05070a">
     <title>Star Log: Preparar missão</title>
+    <link rel="icon" type="image/png" href="/assets/images/USSamazonia.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Orbitron:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="space-page">
-    <!-- navigation -->
+<body class="space-page game-page">
     <main class="game-main" id="main">
         <h1 class="sr-only">Star Log: New Horizons — missão</h1>
-        <div class="game-heading"><p class="eyebrow">REGISTRO DE VOO / 001</p><a href="/">← Voltar à base</a></div>
-        <div class="flight-toolbar"><span id="flight-state">PRÉ-VOO</span><div><button id="pause-mission" type="button" disabled>Pausar</button><button id="restart-mission" type="button" disabled>Reiniciar</button></div></div>
+        <span id="flight-state" class="sr-only">PRÉ-VOO</span>
         <div class="game-frame">
-            <div id="game-container" tabindex="-1" aria-label="Área do jogo. W A S D para mover e espaço ou clique para disparar."></div>
+            <div id="game-container" tabindex="-1" aria-label="Área do jogo. W A S D para mover, espaço ou clique para disparar e ESC para pausar."></div>
             <section id="mission-gate" class="mission-gate" aria-labelledby="mission-title">
-                <div class="briefing-header"><span class="eyebrow">PREPARAÇÃO DA MISSÃO</span><span aria-hidden="true">[ 01 ]</span></div>
+                <div class="briefing-header"><span class="eyebrow">PREPARAÇÃO DA MISSÃO</span><a href="/" class="briefing-back">← Voltar à base</a></div>
                 <h2 id="mission-title">Seu próximo<br><em>horizonte.</em></h2>
-                <p class="briefing-copy">Desvie das bombas e destrua o asteroide.</p>
+                <p class="briefing-copy">Destrua o asteroide e alcance o próximo horizonte.</p>
                 <div class="controls-guide">
                     <div><span class="control-number">01 / NAVEGAR</span><div class="key-row"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><span>Mover a nave</span></div>
                     <div><span class="control-number">02 / ATACAR</span><div class="key-row"><kbd>ESPAÇO</kbd></div><span>Disparar laser · ou clique</span></div>
                 </div>
-                <div class="launch-row"><button id="launch-mission" class="primary-action" type="button">Iniciar missão <span aria-hidden="true">↗</span></button><span class="launch-note">TECLADO + MOUSE<br>Contagem de 3s antes de começar</span></div>
+                <div class="launch-row">
+                    <button id="launch-mission" class="primary-action" type="button">Iniciar missão <span aria-hidden="true">↗</span></button>
+                    <button id="restart-mission" class="modal-action" type="button" hidden disabled>Reiniciar</button>
+                    <span class="launch-note">TECLADO + MOUSE<br>Contagem de 3s antes de começar</span>
+                </div>
                 <progress id="load-progress" max="1" value="0" aria-label="Carregamento da missão" hidden></progress>
                 <p id="launch-status" class="action-note" role="status" aria-live="polite">Aguardando seu comando.</p>
             </section>
+            <section id="pause-modal" class="pause-modal" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+                <div class="pause-dialog">
+                    <div class="briefing-header"><span class="eyebrow">VOO PAUSADO</span><span aria-hidden="true">[ ESC ]</span></div>
+                    <h2 id="pause-title">Missão em<br><em>espera.</em></h2>
+                    <p class="briefing-copy">O voo foi pausado. Escolha como deseja prosseguir.</p>
+                    <div class="pause-actions">
+                        <button id="pause-mission" class="primary-action" type="button" disabled>Retornar</button>
+                        <a href="https://github.com/KevsonDoc/Star-Log_New-Horizon" target="_blank" rel="noopener noreferrer" class="modal-action">Projeto <span aria-hidden="true">↗</span></a>
+                        <a href="/" class="modal-action modal-action-danger">Retornar à estação</a>
+                    </div>
+                </div>
+            </section>
         </div>
-        <p class="game-hint">W A S D · Mover <span>ESPAÇO / CLIQUE · Disparar</span> Use “Pausar” para fazer uma pausa.</p>
+        <p class="game-hint">W A S D · Mover <span>ESPAÇO / CLIQUE · Disparar</span> ESC · Pausar</p>
         <noscript><p>Ative o JavaScript para iniciar a missão.</p></noscript>
     </main>
     <script type="importmap">{ "imports": { "phaser": "/vendor/phaser.esm.min.js" } }</script>
