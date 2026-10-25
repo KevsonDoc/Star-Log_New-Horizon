@@ -81,6 +81,8 @@ button {
 
 a:focus-visible,
 button:focus-visible,
+.pause-actions > :focus,
+.launch-row > :focus,
 #game-container:focus-visible {
     outline: 1.5px solid var(--focus);
     outline-offset: 5px;
@@ -528,7 +530,8 @@ kbd {
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.primary-action:hover {
+.primary-action:hover,
+.primary-action:focus {
     background: var(--champagne);
     border-color: var(--champagne);
 }
@@ -556,7 +559,8 @@ kbd {
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.modal-action:hover {
+.modal-action:hover,
+.modal-action:focus {
     color: var(--champagne);
     border-color: var(--champagne);
     background: rgba(216, 194, 157, 0.08);
@@ -568,7 +572,8 @@ kbd {
     background: rgba(229, 72, 77, 0.08);
 }
 
-.modal-action-danger:hover {
+.modal-action-danger:hover,
+.modal-action-danger:focus {
     color: #ffd6d6;
     border-color: rgba(229, 72, 77, 0.85);
     background: rgba(229, 72, 77, 0.2);

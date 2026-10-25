@@ -7,6 +7,9 @@ import { KeyboardControls } from '../input/KeyboardControls.js';
 import { ProjectileSystem } from '../systems/ProjectileSystem.js';
 import { SpaceBackgroundSystem } from '../systems/SpaceBackgroundSystem.js';
 
+const ASTEROID_SPIN_ANIM = 'sl-asteroid-spin';
+const FIRE_COOLDOWN_MS = 135;
+
 export class GameScene extends Phaser.Scene {
     private match!: Match;
     private background!: SpaceBackgroundSystem;
@@ -15,6 +18,10 @@ export class GameScene extends Phaser.Scene {
     private healthLabel!: Phaser.GameObjects.Text;
     private controls!: KeyboardControls;
     private projectiles!: ProjectileSystem;
+    private readonly muzzlePoint = new Phaser.Math.Vector2();
+    private readonly asteroidAnchor = new Phaser.Math.Vector2();
+    private readonly asteroidOffset = new Phaser.Math.Vector2();
+    private fireCooldown = 0;
     private firing = false;
     private ready = false;
     private loadFailed = false;
@@ -22,9 +29,11 @@ export class GameScene extends Phaser.Scene {
     constructor() { super('game'); }
 
     init(): void {
+        this.fireCooldown = 0;
         this.firing = false;
         this.ready = false;
         this.loadFailed = false;
+        this.asteroidOffset.set(0, 0);
     }
 
     preload(): void {
@@ -57,7 +66,11 @@ export class GameScene extends Phaser.Scene {
         this.createExplosion();
         this.createHealthLabel();
 
-        this.projectiles = new ProjectileSystem(this, this.asteroid, () => this.hitAsteroid());
+        this.projectiles = new ProjectileSystem(
+            this,
+            this.asteroid,
+            (hitX, hitY, normalAngle) => this.hitAsteroid(hitX, hitY, normalAngle),
+        );
         this.controls = new KeyboardControls(this.input.keyboard);
         this.input.on('pointerdown', this.fireLaser, this);
         this.input.on('pointerup', this.releaseTrigger, this);
@@ -78,10 +91,37 @@ export class GameScene extends Phaser.Scene {
 
     update(_time: number, delta: number): void {
         this.background?.update(delta);
-        if (!this.ready || !this.match.isRunning) return;
+        if (!this.ready) return;
+
+        const recoverLerp = Math.min(1, delta / 65);
+        if (this.player?.active) {
+            this.player.getTopCenter(this.muzzlePoint);
+        }
+
+        if (this.asteroid?.active && this.match.isRunning) {
+            this.asteroidOffset.x = Phaser.Math.Linear(this.asteroidOffset.x, 0, recoverLerp);
+            this.asteroidOffset.y = Phaser.Math.Linear(this.asteroidOffset.y, 0, recoverLerp);
+            this.asteroid.setPosition(
+                Math.round(this.asteroidAnchor.x + this.asteroidOffset.x),
+                Math.round(this.asteroidAnchor.y + this.asteroidOffset.y),
+            );
+            this.asteroid.body?.updateFromGameObject();
+        }
+
+        if (!this.match.isRunning) {
+            this.projectiles?.update(delta);
+            return;
+        }
+
+        this.fireCooldown = Math.max(0, this.fireCooldown - delta);
+        if (this.firing && this.fireCooldown <= 0) {
+            this.shootVolley();
+        }
+
         const velocity = this.controls.getVelocity(GAME_SETTINGS.playerSpeed);
         this.player.setVelocity(velocity.x, velocity.y);
-        this.projectiles.update();
+        this.player.getTopCenter(this.muzzlePoint);
+        this.projectiles.update(delta, this.muzzlePoint.x, this.muzzlePoint.y);
     }
 
     private createPlayer(width: number, height: number): void {
@@ -94,16 +134,26 @@ export class GameScene extends Phaser.Scene {
     }
 
     private createAsteroid(width: number): void {
-        this.asteroid = this.physics.add.sprite(Math.floor(width / 2), 120, TEXTURES.asteroid);
+        this.asteroidAnchor.set(Math.floor(width / 2), 120);
+        this.asteroid = this.physics.add.sprite(this.asteroidAnchor.x, this.asteroidAnchor.y, TEXTURES.asteroid, 0);
         this.asteroid.setDepth(2).setImmovable(true).setCollideWorldBounds(true);
+        if (!this.anims.exists(ASTEROID_SPIN_ANIM)) {
+            this.anims.create({
+                key: ASTEROID_SPIN_ANIM,
+                frames: this.anims.generateFrameNumbers(TEXTURES.asteroid, { start: 0, end: 29 }),
+                frameRate: 10,
+                repeat: -1,
+            });
+        }
+        this.asteroid.play(ASTEROID_SPIN_ANIM);
     }
 
     private createExplosion(): void {
         if (this.anims.exists('explosion')) return;
         this.anims.create({
             key: 'explosion',
-            frames: this.anims.generateFrameNumbers(TEXTURES.explosion),
-            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(TEXTURES.explosion, { start: 2, end: 11 }),
+            frameRate: 14,
         });
     }
 
@@ -118,8 +168,12 @@ export class GameScene extends Phaser.Scene {
         const height = gameSize.height || GAME_SETTINGS.height;
         this.physics.world.setBounds(0, 0, width, height);
         this.background?.resize(width, height);
+        this.asteroidAnchor.set(Math.floor(width / 2), 120);
         if (this.asteroid?.active) {
-            this.asteroid.setPosition(Math.floor(width / 2), 120);
+            this.asteroid.setPosition(
+                Math.round(this.asteroidAnchor.x + this.asteroidOffset.x),
+                Math.round(this.asteroidAnchor.y + this.asteroidOffset.y),
+            );
             this.asteroid.body?.updateFromGameObject();
         }
         if (this.player?.active) {
@@ -139,17 +193,32 @@ export class GameScene extends Phaser.Scene {
     private fireLaser(): void {
         if (!this.ready || this.firing || !this.match.isRunning) return;
         this.firing = true;
-        this.projectiles.fire(this.player.x, this.player.y);
+        this.shootVolley();
     }
 
-    private releaseTrigger(): void { this.firing = false; }
+    private shootVolley(): void {
+        this.fireCooldown = FIRE_COOLDOWN_MS;
+        this.player.getTopCenter(this.muzzlePoint);
+        this.projectiles.fire(this.muzzlePoint.x, this.muzzlePoint.y);
+    }
 
-    private hitAsteroid(): void {
+    private releaseTrigger(): void {
+        this.firing = false;
+        this.fireCooldown = 0;
+    }
+
+    private hitAsteroid(_hitX: number, _hitY: number, normalAngle: number): void {
         if (!this.match.isRunning) return;
         this.match.hitAsteroid();
         this.healthLabel.setText('VIDA ASTEROID: ' + this.match.asteroidHealth);
+
+        // Subtle integer-snapped recoil away from impact normal
+        this.asteroidOffset.x = Phaser.Math.Clamp(this.asteroidOffset.x - Math.cos(normalAngle) * 2, -3, 3);
+        this.asteroidOffset.y = Phaser.Math.Clamp(this.asteroidOffset.y - 2, -3, 1);
+
         if (this.match.status === 'won') {
-            this.cameras.main.shake(220, 0.005);
+            this.projectiles.triggerFinalBlast(this.asteroid.x, this.asteroid.y);
+            this.cameras.main.shake(260, 0.006);
             this.asteroid.play('explosion');
             this.finishMatch('VITÓRIA', SPACE_PALETTE.starGold);
         }
